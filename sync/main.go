@@ -9,27 +9,31 @@ var (
 	balance int = 100
 )
 
-func Deposit(amount int, waitGroup *sync.WaitGroup, lock *sync.Mutex) {
+func Deposit(amount int, waitGroup *sync.WaitGroup, mutex *sync.RWMutex) {
 	defer waitGroup.Done()
-	lock.Lock()
+	mutex.RLock()
 	balance += amount
-	lock.Unlock()
+	mutex.RUnlock()
 }
 
-func Balance() int {
-	return balance
+func Balance(mutex *sync.RWMutex) int {
+	mutex.RLock()
+	b := balance
+	mutex.RUnlock()
+	return b
 }
 
 func main() {
 	var waitGroup sync.WaitGroup
-	var lock sync.Mutex
+	//var mutex sync.Mutex
+	var mutex sync.RWMutex
 
 	for i := 1; i <= 5; i++ {
 		waitGroup.Add(1)
-		go Deposit(i*100, &waitGroup, &lock)
+		go Deposit(i*100, &waitGroup, &mutex)
 	}
 
 	waitGroup.Wait()
-	fmt.Println(Balance())
+	fmt.Println(Balance(&mutex))
 
 }
